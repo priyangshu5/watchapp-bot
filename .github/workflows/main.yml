@@ -1,0 +1,90 @@
+# ================================================================
+# .github/workflows/main.yml — GitHub Actions Workflow
+# ================================================================
+#
+#  Trigger:  Manual  (Actions tab → Run workflow)
+#  Runtime:  Up to ~6 hours (GitHub free-tier limit)
+#
+#  What it does:
+#    1. Checks out your repo
+#    2. Installs Node.js 24
+#    3. Installs Chromium + all required system libraries
+#    4. Runs  npm install
+#    5. Points Puppeteer at the system Chromium (no extra download)
+#    6. Runs the bot  (node index.js)
+#
+#  How to scan the QR:
+#    → Watch the live logs — the QR appears as ASCII art.
+#    → Scan it with WhatsApp on your phone.
+#
+# ================================================================
+
+name: WhatsApp AI Bot
+
+on:
+  workflow_dispatch:   # manual trigger only
+
+jobs:
+  run-bot:
+    name: Run WhatsApp AI Bot
+    runs-on: ubuntu-latest
+    timeout-minutes: 355     # just under GitHub's 6-hour hard limit
+
+    steps:
+
+      # ── Step 1: Pull the repo code onto the runner ───────────
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Step 2: Install Node.js 24 ───────────────────────────
+      #    No "cache: npm" — caching needs package-lock.json which
+      #    is intentionally excluded from this repo.
+      - name: 🟢 Set up Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # ── Step 3: Install Chromium + system libraries ───────────
+      #    whatsapp-web.js uses Puppeteer which drives a real
+      #    Chromium browser. These packages are the dependencies
+      #    that Chromium needs on a bare Ubuntu 24.04 server.
+      - name: 🖥️ Install Chromium and system libraries
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y \
+            chromium-browser \
+            libatk-bridge2.0-0 \
+            libgtk-3-0 \
+            libx11-xcb1 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2t64 \
+            libpangocairo-1.0-0 \
+            libxss1 \
+            libnss3 \
+            fonts-liberation \
+            xdg-utils
+
+      # ── Step 4: Install Node.js packages ─────────────────────
+      - name: 📦 Install Node.js dependencies
+        run: npm install
+
+      # ── Step 5: Tell Puppeteer to use system Chromium ─────────
+      #    Without this, Puppeteer tries to download its own
+      #    Chromium binary (slow + sometimes fails in CI).
+      - name: ⚙️ Configure Puppeteer → system Chromium
+        run: |
+          CHROMIUM_PATH=$(which chromium-browser)
+          echo "PUPPETEER_EXECUTABLE_PATH=$CHROMIUM_PATH" >> $GITHUB_ENV
+          echo "Using Chromium at: $CHROMIUM_PATH"
+
+      # ── Step 6: Start the bot ─────────────────────────────────
+      #    👀 Watch THIS step's logs for the QR code ASCII art.
+      #    Scan it with WhatsApp within ~60 seconds.
+      - name: 🤖 Start WhatsApp AI Bot
+        env:
+          PUPPETEER_EXECUTABLE_PATH: ${{ env.PUPPETEER_EXECUTABLE_PATH }}
+        run: node index.js
+
