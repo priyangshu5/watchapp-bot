@@ -87,4 +87,3 @@ jobs:
         env:
           PUPPETEER_EXECUTABLE_PATH: ${{ env.PUPPETEER_EXECUTABLE_PATH }}
         run: node index.js
-
