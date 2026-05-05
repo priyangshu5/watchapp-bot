@@ -1,0 +1,12 @@
+# Node dependencies (reinstalled by npm install)
+node_modules/
+
+# WhatsApp session auth tokens — NEVER commit these
+session/
+
+# Generated QR image (temporary, recreated on each run)
+qr.png
+
+# OS files
+.DS_Store
+Thumbs.db
